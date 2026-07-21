@@ -1,23 +1,19 @@
 import pygame
-import random
+from player import Player
 
 pygame.init()
-screen = pygame.display.set_mode((600, 400))
+screen = pygame.display.set_mode((1920, 1080))
 running = True
 clock = pygame.time.Clock()
-r = 1
-g = 255
-b = 1
+bgimage = pygame.image.load('python\\jumpdude\\resources\\craftpix-891123-free-pixel-art-street-2d-backgrounds\\PNG\\City3\\Bright\\City3.png').convert()
+player = Player()
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    
-    r = random.randrange(0, 255)
-    g = random.randrange(0, 255)
-    b = random.randrange(0, 255)
-    screen.fill((r, g, b))
+    screen.blit(bgimage, (0,0))
+    screen.blit(player.surf, player.posicion)
     pygame.display.flip()
     clock.tick(1)
 
