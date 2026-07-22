@@ -12,9 +12,14 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    keys = pygame.key.get_pressed()
+
+    
+    player.move(keys)
+    
     screen.blit(bgimage, (0,0))
-    screen.blit(player.surf, player.posicion)
+    screen.blit(player.surf, (player.posicion.x,player.posicion.y))
     pygame.display.flip()
-    clock.tick(1)
+    clock.tick(60)
 
 pygame.quit()
