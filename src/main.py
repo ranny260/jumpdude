@@ -24,8 +24,9 @@ def obstacle_movement(obs_list):
                     screen.blit(skull_surf, obs)
                 else:
                     screen.blit(obstacle_surf, obs)
-                
-                pygame.draw.rect(screen, 'red', obs, 1)
+
+                # bounding box
+                #pygame.draw.rect(screen, 'red', obs, 1)
         return return_list
     else:
         return []
@@ -37,6 +38,24 @@ def has_collided(player, obstacles):
                 return True
     return False
 
+def ground_movement():
+    if ground_rect.x < -599: ground_rect.x = 0
+
+    ground_rect.x -= 5.000000001
+    second_rect = ground_surface.get_rect(topleft=(ground_rect.x+600, 325))
+    screen.blit(ground_surface,ground_rect)
+    screen.blit(ground_surface,second_rect)
+
+def screen_movement():
+    if bg_rect.x < -1333: bg_rect.x = 0
+    if current_time % 1 == 0:
+        bg_rect.x -= 1
+    second_bgrect = bg_surface.get_rect(topleft = (bg_rect.x + 1334, 0))
+    screen.blit(bg_surface,bg_rect)
+    screen.blit(bg_surface, second_bgrect)
+
+
+
 # pygame window and game setup
 screen_width = 600
 screen_height = 400 
@@ -47,6 +66,7 @@ running = True
 game_running = False
 start_time = 0
 score = 0
+current_time = 0
 
 # fonts
 my_font = pygame.font.Font('resources\\fonts\\storm_gust\\Storm Gust.ttf', 50)
@@ -60,11 +80,15 @@ obstacle_image = 'resources\\graveyard\\Environment\\Headstone 02.png'
 cross_image = 'resources\\graveyard\\Environment\\Headstone 03.png'
 skull_image = 'resources\\graveyard\\Environment\\Skull.png'
 player_image = 'resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster.png'
+
+
 start_bg_image = 'resources\\StartScreen.png'
 
 # deco ingame
 bg_surface = pygame.image.load(bg_image).convert()
+bg_rect = bg_surface.get_rect(topleft = (0, 0))
 ground_surface = pygame.image.load(ground_image).convert()
+ground_rect = ground_surface.get_rect(topleft = (0, 325))
 text_surf = my_font.render("Phase One: The Graveyard", True, 'grey')
 text_rect = text_surf.get_rect(midtop = (screen_width / 2, 10))
 
@@ -91,6 +115,25 @@ pygame.time.set_timer(obstacle_event, 1200)
 player_surf = pygame.image.load(player_image).convert_alpha()
 player_surf = pygame.transform.scale(player_surf, (50,80))
 player_rect = player_surf.get_rect(midbottom = (100,325))
+
+player_run1 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_1.png').convert_alpha()
+player_run2 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_2.png').convert_alpha()
+player_run3 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_3.png').convert_alpha()
+player_run4 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_4.png').convert_alpha()
+player_run5 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_5.png').convert_alpha()
+player_run6 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_6.png').convert_alpha()
+player_run1 = pygame.transform.rotozoom(player_run1, 0, 2.7)
+player_run2 = pygame.transform.rotozoom(player_run2, 0, 2.7)
+player_run3 = pygame.transform.rotozoom(player_run3, 0, 2.7)
+player_run4 = pygame.transform.rotozoom(player_run4, 0, 2.7)
+player_run5 = pygame.transform.rotozoom(player_run5, 0, 2.7)
+player_run6 = pygame.transform.rotozoom(player_run6, 0, 2.7)
+
+player_run = [player_run1, player_run2, player_run3, player_run4, player_run5, player_run6]
+player_run_index = 0
+
+
+
 player_gravity = 0
 health = 10
 jumps = 0
@@ -107,10 +150,10 @@ while running:
                 if event.key == pygame.K_SPACE and player_rect.bottom == 325:
                     player_gravity = - 20 
             if event.type == obstacle_event:
-                gamble = randint(0, 3)
+                gamble = randint(0, 5)
                 if gamble < 1:
                     obstacle_list.append(obstacle_surf.get_rect(midbottom = (randint(800, 1000), 325)))
-                elif gamble >= 1 and gamble < 2:
+                elif gamble >= 1 and gamble < 3:
                     obstacle_list.append(skull_surf.get_rect(midbottom = (randint(800, 1000), 200)))
                 else:
                     obstacle_list.append(cross_surf.get_rect(midbottom = (randint(800, 1000), 329)))
@@ -125,19 +168,13 @@ while running:
                     jumps = 0
 
     if game_running:
-        screen.blit(bg_surface,(0,0))
-        screen.blit(ground_surface,(0,325))
+        screen_movement()
+        ground_movement()
         screen.blit(text_surf, text_rect)
 
         #obstacle movement
         obstacle_list = obstacle_movement(obstacle_list)
-        # obstacle_rect.x -= 5
-                
-        # if obstacle_rect.right < 0:
-        #     jumps += 1
-        #     obstacle_rect.left = screen_width + 50
         
-        # screen.blit(obstacle_surf, obstacle_rect)
         print_score()
 
         player_gravity += 1
@@ -145,18 +182,21 @@ while running:
         if player_rect.bottom > 325:
             player_rect.bottom = 325
 
-        screen.blit(player_surf, player_rect)
-        pygame.draw.rect(screen, 'red', player_rect, 1)
+        if current_time % 2 == 0:
+            player_run_index += 1
+        if player_run_index > 5:
+            player_run_index = 0
+        screen.blit(player_run[player_run_index], player_rect)
+
+        #pygame.draw.rect(screen, 'red', player_rect, 1)
         
-        # if player_rect.colliderect(obstacle_rect):
-        #     health -= 1 
         if has_collided(player_rect, obstacle_list):
             health -= 1 
               
         if health <= 0:
             game_running = False
     else:
-        obstacle_list = []
+        obstacle_list.clear()
         player_gravity = 0
         player_rect.bottom = 325
         screen.fill((25, 10, 20))
