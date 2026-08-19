@@ -1,4 +1,5 @@
 import pygame
+import os 
 from random import randint
 
 def print_score():
@@ -48,7 +49,7 @@ def ground_movement():
 
 def screen_movement():
     if bg_rect.x < -1333: bg_rect.x = 0
-    if current_time % 1 == 0:
+    if frame_counter % 5 == 0:
         bg_rect.x -= 1
     second_bgrect = bg_surface.get_rect(topleft = (bg_rect.x + 1334, 0))
     screen.blit(bg_surface,bg_rect)
@@ -67,22 +68,23 @@ game_running = False
 start_time = 0
 score = 0
 current_time = 0
+frame_counter = 0
 
 # fonts
-my_font = pygame.font.Font('resources\\fonts\\storm_gust\\Storm Gust.ttf', 50)
-my_numbers = pygame.font.Font('resources\\fonts\\Sectar.otf', 20)
-splash_font = pygame.font.Font('resources\\fonts\\Sectar.otf', 30)
+my_font = pygame.font.Font('resources/fonts/storm_gust/Storm Gust.ttf', 50)
+my_numbers = pygame.font.Font('resources/fonts/Sectar.otf', 20)
+splash_font = pygame.font.Font('resources/fonts/Sectar.otf', 30)
 
 # images
-bg_image = 'resources\\graveyard\\Background\\Background-Layer 00.png'
-ground_image = 'resources\\graveyard\\Platfromer\\Full_Ground.png'
-obstacle_image = 'resources\\graveyard\\Environment\\Headstone 02.png'
-cross_image = 'resources\\graveyard\\Environment\\Headstone 03.png'
-skull_image = 'resources\\graveyard\\Environment\\Skull.png'
-player_image = 'resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster.png'
+bg_image = 'resources/graveyard/Background/Background-Layer 00.png'
+ground_image = 'resources/graveyard/Platfromer/Full_Ground.png'
+obstacle_image = 'resources/graveyard/Environment/Headstone 02.png'
+cross_image = 'resources/graveyard/Environment/Headstone 03.png'
+skull_image = 'resources/graveyard/Environment/Skull.png'
+player_image = 'resources/tiny-hero/1 Pink_Monster/Pink_Monster.png'
 
 
-start_bg_image = 'resources\\StartScreen.png'
+start_bg_image = 'resources/StartScreen.png'
 
 # deco ingame
 bg_surface = pygame.image.load(bg_image).convert()
@@ -116,18 +118,18 @@ player_surf = pygame.image.load(player_image).convert_alpha()
 player_surf = pygame.transform.scale(player_surf, (50,80))
 player_rect = player_surf.get_rect(midbottom = (100,325))
 
-player_run1 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_1.png').convert_alpha()
-player_run2 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_2.png').convert_alpha()
-player_run3 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_3.png').convert_alpha()
-player_run4 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_4.png').convert_alpha()
-player_run5 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_5.png').convert_alpha()
-player_run6 = pygame.image.load('resources\\tiny-hero\\1 Pink_Monster\\Pink_Monster_Run_6.png').convert_alpha()
-player_run1 = pygame.transform.rotozoom(player_run1, 0, 2.7)
-player_run2 = pygame.transform.rotozoom(player_run2, 0, 2.7)
-player_run3 = pygame.transform.rotozoom(player_run3, 0, 2.7)
-player_run4 = pygame.transform.rotozoom(player_run4, 0, 2.7)
-player_run5 = pygame.transform.rotozoom(player_run5, 0, 2.7)
-player_run6 = pygame.transform.rotozoom(player_run6, 0, 2.7)
+player_run1 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_1.png').convert_alpha()
+player_run2 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_2.png').convert_alpha()
+player_run3 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_3.png').convert_alpha()
+player_run4 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_4.png').convert_alpha()
+player_run5 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_5.png').convert_alpha()
+player_run6 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_6.png').convert_alpha()
+player_run1 = pygame.transform.scale(player_run1, (82, 82))
+player_run2 = pygame.transform.scale(player_run2, (82, 82))
+player_run3 = pygame.transform.scale(player_run3, (82, 82))
+player_run4 = pygame.transform.scale(player_run4, (82, 82))
+player_run5 = pygame.transform.scale(player_run5, (82, 82))
+player_run6 = pygame.transform.scale(player_run6, (82, 82))
 
 player_run = [player_run1, player_run2, player_run3, player_run4, player_run5, player_run6]
 player_run_index = 0
@@ -182,7 +184,7 @@ while running:
         if player_rect.bottom > 325:
             player_rect.bottom = 325
 
-        if current_time % 2 == 0:
+        if frame_counter % 3 == 0:
             player_run_index += 1
         if player_run_index > 5:
             player_run_index = 0
@@ -212,6 +214,7 @@ while running:
 
     pygame.display.update()
 
+    frame_counter += 1
     clock.tick(60)  # limits FPS to 60
 
 pygame.quit()
