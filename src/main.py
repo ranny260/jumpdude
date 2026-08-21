@@ -1,5 +1,4 @@
 import pygame
-import os 
 from random import randint
 
 def print_score():
@@ -54,8 +53,6 @@ def screen_movement():
     second_bgrect = bg_surface.get_rect(topleft = (bg_rect.x + 1334, 0))
     screen.blit(bg_surface,bg_rect)
     screen.blit(bg_surface, second_bgrect)
-
-
 
 # pygame window and game setup
 screen_width = 600
@@ -114,10 +111,6 @@ obstacle_event = pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_event, 1200)
 
 # player
-player_surf = pygame.image.load(player_image).convert_alpha()
-player_surf = pygame.transform.scale(player_surf, (50,80))
-player_rect = player_surf.get_rect(midbottom = (100,325))
-
 player_run1 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_1.png').convert_alpha()
 player_run2 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_2.png').convert_alpha()
 player_run3 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_3.png').convert_alpha()
@@ -133,6 +126,17 @@ player_run6 = pygame.transform.scale(player_run6, (82, 82))
 
 player_run = [player_run1, player_run2, player_run3, player_run4, player_run5, player_run6]
 player_run_index = 0
+
+player_jump = []
+player_jump_index = 3
+
+for i in range(0,8):
+    player_jump.append(pygame.image.load(f'resources/tiny-hero/1 Pink_Monster/Pink_Monster_Jump_{i+1}.png').convert_alpha())
+    player_jump[i] = pygame.transform.scale(player_jump[i], (82, 82))
+
+
+player_surf = player_run[player_run_index]
+player_rect = player_surf.get_rect(midbottom = (100,325))
 
 
 
@@ -150,7 +154,7 @@ while running:
             #game running
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and player_rect.bottom == 325:
-                    player_gravity = - 20 
+                    player_gravity = - 20
             if event.type == obstacle_event:
                 gamble = randint(0, 5)
                 if gamble < 1:
@@ -181,14 +185,37 @@ while running:
 
         player_gravity += 1
         player_rect.y += player_gravity
-        if player_rect.bottom > 325:
-            player_rect.bottom = 325
 
-        if frame_counter % 3 == 0:
-            player_run_index += 1
-        if player_run_index > 5:
-            player_run_index = 0
-        screen.blit(player_run[player_run_index], player_rect)
+        if player_rect.bottom >= 325:
+            #estamos en el suelo
+            player_rect.bottom = 325
+            if frame_counter % 3 == 0:
+                player_run_index += 1
+            if player_run_index > 5:
+                player_run_index = 0
+            player_surf = player_run[player_run_index]
+        else:
+            #estamos saltando
+            if player_gravity <= -14:
+                player_jump_index = 0
+            elif player_gravity > -14 and player_gravity <= -8:
+                player_jump_index = 1
+            elif player_gravity > -8 and player_gravity <= -2:
+                player_jump_index = 2
+            elif player_gravity > -2 and player_gravity <= 2:
+                player_jump_index = 3
+            elif player_gravity > 2 and player_gravity <=8:
+                player_jump_index = 4
+            elif player_gravity > 8 and player_gravity <= 14:
+                player_jump_index = 5
+            elif player_gravity > 14 and player_gravity <= 16:
+                player_jump_index = 6
+            elif player_gravity > 16:
+                player_gravity = 7
+
+            player_surf = player_jump[player_jump_index]
+        
+        screen.blit(player_surf, player_rect)
 
         #pygame.draw.rect(screen, 'red', player_rect, 1)
         
