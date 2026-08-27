@@ -1,47 +1,142 @@
 import pygame
 from random import randint
 
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        # run imgs
+        self.run = []
+        self.run_index = 0
+        for i in range(0,6):
+            self.run.append(pygame.image.load(f'resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_{i+1}.png').convert_alpha())
+            self.run[i] = pygame.transform.scale(self.run[i], (82, 82))
+
+        # jump imgs
+        self.jump = []
+        self.jump_index = 3
+        for i in range(0,8):
+            self.jump.append(pygame.image.load(f'resources/tiny-hero/1 Pink_Monster/Pink_Monster_Jump_{i+1}.png').convert_alpha())
+            self.jump[i] = pygame.transform.scale(self.jump[i], (82, 82))
+        
+        self.image = self.run[self.run_index]
+        self.rect = self.image.get_rect(midbottom = (100,325))
+        self.gravity = 0
+        self.health = 10
+        self.hitbox = pygame.Rect.scale_by(self.rect, 0.5, 0.8)
+        # sfx
+        self.jump_sfx = pygame.mixer.Sound('resources/sound/jump.mp3')
+
+
+    def player_input(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE] and self.rect.bottom == 325:
+            self.gravity = -20
+            self.jump_sfx.play()
+
+    def apply_gravity(self):
+        self.gravity += 1
+        self.rect.y += self.gravity
+        if self.rect.bottom >= 325:
+            #estamos en el suelo
+            self.rect.bottom = 325
+            self.run_animation()
+        else:
+            self.jump_animation()
+
+    def run_animation(self):
+        if frame_counter % 3 == 0:
+            self.run_index += 1
+        if self.run_index > 5:
+            self.run_index = 0
+        self.image = self.run[self.run_index]
+
+    def jump_animation(self):
+        if self.gravity <= -14:
+            self.jump_index = 0
+        elif self.gravity > -14 and self.gravity <= -8:
+            self.jump_index = 1
+        elif self.gravity > -8 and self.gravity <= -2:
+            self.jump_index = 2
+        elif self.gravity > -2 and self.gravity <= 2:
+            self.jump_index = 3
+        elif self.gravity > 2 and self.gravity <=8:
+            self.jump_index = 4
+        elif self.gravity > 8 and self.gravity <= 14:
+            self.jump_index = 5
+        elif self.gravity > 14 and self.gravity <= 16:
+            self.jump_index = 6
+        elif self.gravity > 16:
+            self.gravity = 7
+
+        self.image = self.jump[self.jump_index]
+
+    def update(self):
+        self.player_input()
+        self.apply_gravity()
+        self.hitbox.bottom = self.rect.bottom
+
+    def reset_jump(self):
+        self.gravity = 0
+        self.rect.y = 325
+
+class Obstacle(pygame.sprite.Sprite):
+    def __init__(self,type):
+        super().__init__()
+        if type == "skull":
+            self.image = pygame.image.load('resources/graveyard/Environment/Skull.png').convert_alpha()
+            self.image = pygame.transform.rotozoom(self.image,0,0.78)
+            y_pos = 200
+        elif type == "cross":
+            self.image = pygame.image.load('resources/graveyard/Environment/Headstone 03.png').convert_alpha()
+            self.image = pygame.transform.rotozoom(self.image,0,0.5)
+            y_pos = 329
+        else:
+            self.image = pygame.image.load('resources/graveyard/Environment/Headstone 02.png').convert_alpha()
+            self.image = pygame.transform.scale(self.image,(76, 90))
+            y_pos = 325
+
+        self.rect = self.image.get_rect(midbottom = (randint(800, 1000), y_pos))
+
+    def movement(self):
+        self.rect.x -= 5 + int(score / 25)       
+
+    def update(self):
+        self.movement()
+        self.destroy()
+
+    def destroy(self):
+        if self.rect.x < -100:
+            self.kill()
+
+# custom collide callback function
+def collide_hit_rect(one, two):
+    return one.hitbox.colliderect(two.rect)
+
+def has_collided():
+    if pygame.sprite.spritecollide(player.sprite, obstacles, False, collide_hit_rect):
+        return True
+    else:
+        return False
+
 def print_score():
     global score
     global current_time
+    global text_alpha
     if game_running:
         current_time = pygame.time.get_ticks()
         score = (current_time - start_time) // 1000
     numbers_surf = my_numbers.render(f"health: {health} || score: {score}", True, 'grey')
-    numbers_rect = numbers_surf.get_rect(topleft = (200, 60))
+    numbers_rect = numbers_surf.get_rect(topleft = (200, 20))
     screen.blit(numbers_surf, numbers_rect)
+    if score > 2 and text_alpha > 0:
+        text_alpha -= 2
+        text_surf.set_alpha(text_alpha)
 
-def obstacle_movement(obs_list):
-    return_list = []
-    if obs_list:
-        for obs in obs_list:
-            obs.x -= 5
-            if obs.x > -100:
-                return_list.append(obs)
-                if obs.bottom > 325:
-                    screen.blit(cross_surf, obs)
-                elif obs.bottom < 201:
-                    screen.blit(skull_surf, obs)
-                else:
-                    screen.blit(obstacle_surf, obs)
-
-                # bounding box
-                #pygame.draw.rect(screen, 'red', obs, 1)
-        return return_list
-    else:
-        return []
-
-def has_collided(player, obstacles):
-    if obstacles:
-        for obstacle in obstacles:
-            if player.colliderect(obstacle):
-                return True
-    return False
 
 def ground_movement():
     if ground_rect.x < -599: ground_rect.x = 0
 
-    ground_rect.x -= 5.000000001
+    ground_rect.x -= 5.000000001 + int(score / 25)
     second_rect = ground_surface.get_rect(topleft=(ground_rect.x+600, 325))
     screen.blit(ground_surface,ground_rect)
     screen.blit(ground_surface,second_rect)
@@ -54,18 +149,44 @@ def screen_movement():
     screen.blit(bg_surface,bg_rect)
     screen.blit(bg_surface, second_bgrect)
 
+def check_difficulty():
+    if score == 1:
+        pygame.time.set_timer(obstacle_event, 1200)
+    elif score == 25:
+        pygame.time.set_timer(obstacle_event, 1000)
+    elif score == 50:
+        pygame.time.set_timer(obstacle_event, 800)
+    elif score == 75:
+        pygame.time.set_timer(obstacle_event, 700)
+    elif score == 100:
+        pygame.time.set_timer(obstacle_event, 600)
+
 # pygame window and game setup
 screen_width = 600
 screen_height = 400 
 pygame.init()
 screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()
-running = True
-game_running = False
-start_time = 0
+# el bucle de la aplicacion
+running = True 
+# Determina si estamos en lobby o jugando
+game_running = False 
+# Guardaremos el momento de inicio de partida para contar los segundos
+# que lleva vivo, eso nos dará la puntuación
+start_time = 0 
+# Puntuación
 score = 0
+# Aqui guardaremos el tiempo actual y a este le restaremos start_time
+# para calcular puntuacion
 current_time = 0
+# Contador de frames, lo usamos para decidir que frame pintamos en nuestras animaciones
 frame_counter = 0
+
+# player sprite based
+player = pygame.sprite.GroupSingle()
+player.add(Player())
+obstacles = pygame.sprite.Group()
+
 
 # fonts
 my_font = pygame.font.Font('resources/fonts/storm_gust/Storm Gust.ttf', 50)
@@ -75,12 +196,6 @@ splash_font = pygame.font.Font('resources/fonts/Sectar.otf', 30)
 # images
 bg_image = 'resources/graveyard/Background/Background-Layer 00.png'
 ground_image = 'resources/graveyard/Platfromer/Full_Ground.png'
-obstacle_image = 'resources/graveyard/Environment/Headstone 02.png'
-cross_image = 'resources/graveyard/Environment/Headstone 03.png'
-skull_image = 'resources/graveyard/Environment/Skull.png'
-player_image = 'resources/tiny-hero/1 Pink_Monster/Pink_Monster.png'
-
-
 start_bg_image = 'resources/StartScreen.png'
 
 # deco ingame
@@ -88,8 +203,10 @@ bg_surface = pygame.image.load(bg_image).convert()
 bg_rect = bg_surface.get_rect(topleft = (0, 0))
 ground_surface = pygame.image.load(ground_image).convert()
 ground_rect = ground_surface.get_rect(topleft = (0, 325))
-text_surf = my_font.render("Phase One: The Graveyard", True, 'grey')
-text_rect = text_surf.get_rect(midtop = (screen_width / 2, 10))
+text_alpha = 100
+text_surf = my_font.render("The Graveyard", True, 'grey')
+text_rect = text_surf.get_rect(midtop = (screen_width / 2, screen_height / 3))
+
 
 #init screen
 splash_bg_surf = pygame.image.load(start_bg_image).convert()
@@ -98,150 +215,91 @@ splash_text_rect = splash_text_surf.get_rect(center = (300, 300))
 splash_text_alpha = 255
 splash_text_alpha_vel = -4
 
-# obstacles
-obstacle_surf = pygame.image.load(obstacle_image).convert_alpha()
-obstacle_surf = pygame.transform.scale(obstacle_surf,(76, 90))
-cross_surf = pygame.image.load(cross_image).convert_alpha()
-cross_surf = pygame.transform.rotozoom(cross_surf,0,0.5)
-skull_surf = pygame.image.load(skull_image).convert_alpha()
-skull_surf = pygame.transform.rotozoom(skull_surf,0,0.78)
-obstacle_list = []
-
+# Creamos un evento personalizado y lo configuramos para que se ejecute
+# cada 1200 milis. Será el generador de obstaculos
 obstacle_event = pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_event, 1200)
 
 # player
-player_run1 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_1.png').convert_alpha()
-player_run2 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_2.png').convert_alpha()
-player_run3 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_3.png').convert_alpha()
-player_run4 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_4.png').convert_alpha()
-player_run5 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_5.png').convert_alpha()
-player_run6 = pygame.image.load('resources/tiny-hero/1 Pink_Monster/Pink_Monster_Run_6.png').convert_alpha()
-player_run1 = pygame.transform.scale(player_run1, (82, 82))
-player_run2 = pygame.transform.scale(player_run2, (82, 82))
-player_run3 = pygame.transform.scale(player_run3, (82, 82))
-player_run4 = pygame.transform.scale(player_run4, (82, 82))
-player_run5 = pygame.transform.scale(player_run5, (82, 82))
-player_run6 = pygame.transform.scale(player_run6, (82, 82))
 
-player_run = [player_run1, player_run2, player_run3, player_run4, player_run5, player_run6]
-player_run_index = 0
-
-player_jump = []
-player_jump_index = 3
-
-for i in range(0,8):
-    player_jump.append(pygame.image.load(f'resources/tiny-hero/1 Pink_Monster/Pink_Monster_Jump_{i+1}.png').convert_alpha())
-    player_jump[i] = pygame.transform.scale(player_jump[i], (82, 82))
-
-
-player_surf = player_run[player_run_index]
-player_rect = player_surf.get_rect(midbottom = (100,325))
-
-
-
-player_gravity = 0
-health = 10
-jumps = 0
 
 while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
+    # lista de eventos que hayan sucedido en el frame actual
     for event in pygame.event.get():
+        # Evento de click en la X de la aplicacion
         if event.type == pygame.QUIT:
             running = False
+        #game running
         if game_running :
-            #game running
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and player_rect.bottom == 325:
-                    player_gravity = - 20
+            # evento personalizado generador de obstaculos
             if event.type == obstacle_event:
                 gamble = randint(0, 5)
                 if gamble < 1:
-                    obstacle_list.append(obstacle_surf.get_rect(midbottom = (randint(800, 1000), 325)))
+                    obstacles.add(Obstacle("pepepeeppeepepeppep"))
                 elif gamble >= 1 and gamble < 3:
-                    obstacle_list.append(skull_surf.get_rect(midbottom = (randint(800, 1000), 200)))
+                    obstacles.add(Obstacle("skull"))
                 else:
-                    obstacle_list.append(cross_surf.get_rect(midbottom = (randint(800, 1000), 329)))
-
+                    obstacles.add(Obstacle("cross"))
+        #game not running
         else:
-            #game not running
+            # Se pulsa INTRO estando en el lobby
             if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     start_time = pygame.time.get_ticks()
-                    #obstacle_rect.left = screen_width + 50
                     game_running = True
                     health = 10
-                    jumps = 0
 
     if game_running:
+        check_difficulty()
+        # actualizamos el background y el marcador
         screen_movement()
         ground_movement()
         screen.blit(text_surf, text_rect)
-
-        #obstacle movement
-        obstacle_list = obstacle_movement(obstacle_list)
-        
         print_score()
 
-        player_gravity += 1
-        player_rect.y += player_gravity
+        # updating sprites o updating groups
+        player.update()
+        player.draw(screen)
+        obstacles.update()
+        obstacles.draw(screen)
 
-        if player_rect.bottom >= 325:
-            #estamos en el suelo
-            player_rect.bottom = 325
-            if frame_counter % 3 == 0:
-                player_run_index += 1
-            if player_run_index > 5:
-                player_run_index = 0
-            player_surf = player_run[player_run_index]
-        else:
-            #estamos saltando
-            if player_gravity <= -14:
-                player_jump_index = 0
-            elif player_gravity > -14 and player_gravity <= -8:
-                player_jump_index = 1
-            elif player_gravity > -8 and player_gravity <= -2:
-                player_jump_index = 2
-            elif player_gravity > -2 and player_gravity <= 2:
-                player_jump_index = 3
-            elif player_gravity > 2 and player_gravity <=8:
-                player_jump_index = 4
-            elif player_gravity > 8 and player_gravity <= 14:
-                player_jump_index = 5
-            elif player_gravity > 14 and player_gravity <= 16:
-                player_jump_index = 6
-            elif player_gravity > 16:
-                player_gravity = 7
-
-            player_surf = player_jump[player_jump_index]
-        
-        screen.blit(player_surf, player_rect)
-
-        #pygame.draw.rect(screen, 'red', player_rect, 1)
-        
-        if has_collided(player_rect, obstacle_list):
+        # Comprobamos colisiones
+        if has_collided():
             health -= 1 
-              
+
+        # Comprobamos si el player ha muerto
         if health <= 0:
             game_running = False
     else:
-        obstacle_list.clear()
-        player_gravity = 0
-        player_rect.bottom = 325
-        screen.fill((25, 10, 20))
+        # imprimimos el background
         screen.blit(splash_bg_surf, (0,0))
+
+        # imprimimos el texto "Press intro to start y lo animamos
+        # en alpha haciendo que suba y baje el alpha
         screen.blit(splash_text_surf, splash_text_rect)
         splash_text_alpha += splash_text_alpha_vel
         splash_text_surf.set_alpha(splash_text_alpha)
-        if splash_text_alpha < 50 or splash_text_alpha > 255: splash_text_alpha_vel *= -1
+        if splash_text_alpha < 50 or splash_text_alpha > 255: 
+            splash_text_alpha_vel *= -1
+        
+        # Solo se cumple si ya hemos jugado una partida antes
+        # Asi podemos usar la pantalla tanto para iniciar el juego
+        # como despues de haber muerto
         if score > 0 :
+            # Mostramos la puntuacion de la ultima partida
             splash_score_surf = my_numbers.render(f"Your last score was: {score}", True, (148,141,157))
             splash_score_rect = splash_score_surf.get_rect(center = (300, 250))
             screen.blit(splash_score_surf, splash_score_rect)
 
+            # Borramos todos los obstaculos que hubiera
+            obstacles.empty()
+            player.sprite.reset_jump()
+            pygame.time.set_timer(obstacle_event, 1200)
+    
+    # Siempre actualizamos el display a cada frame
     pygame.display.update()
-
+    # Nuestra cuenta de frames
     frame_counter += 1
-    clock.tick(60)  # limits FPS to 60
+    # Limitacion a 60 FPS
+    clock.tick(60) 
 
 pygame.quit()
