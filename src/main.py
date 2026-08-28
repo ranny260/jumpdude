@@ -26,12 +26,11 @@ class Player(pygame.sprite.Sprite):
         # sfx
         self.jump_sfx = pygame.mixer.Sound('resources/sound/jump.mp3')
 
-
     def player_input(self):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_SPACE] and self.rect.bottom == 325:
             self.gravity = -20
-            self.jump_sfx.play()
+            jump_channel.play(self.jump_sfx)
 
     def apply_gravity(self):
         self.gravity += 1
@@ -114,6 +113,8 @@ def collide_hit_rect(one, two):
 
 def has_collided():
     if pygame.sprite.spritecollide(player.sprite, obstacles, False, collide_hit_rect):
+        if not hit_channel.get_busy():
+            hit_channel.play(hit_sfx)
         return True
     else:
         return False
@@ -151,14 +152,19 @@ def screen_movement():
 
 def check_difficulty():
     if score == 1:
+        musik_channel.set_volume(0.6)
         pygame.time.set_timer(obstacle_event, 1200)
     elif score == 25:
+        musik_channel.set_volume(0.7)
         pygame.time.set_timer(obstacle_event, 1000)
     elif score == 50:
+        musik_channel.set_volume(0.8)
         pygame.time.set_timer(obstacle_event, 800)
     elif score == 75:
+        musik_channel.set_volume(0.9)
         pygame.time.set_timer(obstacle_event, 700)
     elif score == 100:
+        musik_channel.set_volume(1)
         pygame.time.set_timer(obstacle_event, 600)
 
 # pygame window and game setup
@@ -187,6 +193,14 @@ player = pygame.sprite.GroupSingle()
 player.add(Player())
 obstacles = pygame.sprite.Group()
 
+# sounds
+pygame.mixer.set_num_channels(4)
+musik_channel = pygame.mixer.Channel(1)
+jump_channel = pygame.mixer.Channel(2)
+hit_channel = pygame.mixer.Channel(3)
+hit_sfx = pygame.mixer.Sound('resources/sound/hit.mp3')
+hit_sfx.set_volume(0.2)
+epik_musik = pygame.mixer.Sound('resources/sound/epik_musik.mp3')
 
 # fonts
 my_font = pygame.font.Font('resources/fonts/storm_gust/Storm Gust.ttf', 50)
@@ -269,7 +283,12 @@ while running:
         # Comprobamos si el player ha muerto
         if health <= 0:
             game_running = False
+            musik_channel.stop()
     else:
+        if not musik_channel.get_busy():
+            musik_channel.play(epik_musik)
+            musik_channel.set_volume(0.5)
+        
         # imprimimos el background
         screen.blit(splash_bg_surf, (0,0))
 
