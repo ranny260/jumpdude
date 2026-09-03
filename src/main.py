@@ -203,7 +203,7 @@ hit_sfx.set_volume(0.2)
 epik_musik = pygame.mixer.Sound('resources/sound/epik_musik.mp3')
 
 # fonts
-my_font = pygame.font.Font('resources/fonts/storm_gust/Storm Gust.ttf', 50)
+my_font = pygame.font.Font('resources/fonts/Storm Gust.ttf', 50)
 my_numbers = pygame.font.Font('resources/fonts/Sectar.otf', 20)
 splash_font = pygame.font.Font('resources/fonts/Sectar.otf', 30)
 
